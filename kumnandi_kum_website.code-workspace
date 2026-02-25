@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "name": "kumnandi_kum_website",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/dist": true,
+      "**/node_modules": true
+    }
+  }
+}
