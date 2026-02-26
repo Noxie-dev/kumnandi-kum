@@ -1,0 +1,25 @@
+services:
+  db:
+    image: mysql:8
+    container_name: kk-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: strongpassword
+      MYSQL_DATABASE: kumnandi_kum
+    ports:
+      - "3306:3306"
+    volumes:
+      - kk_mysql_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: kumnandi_kum_website
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://root:strongpassword@db:3306/kumnandi_kum
+
+volumes:
+  kk_mysql_data:
