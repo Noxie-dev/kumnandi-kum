@@ -9,9 +9,9 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 const contactInfo = [
-  { icon: Mail, label: "Email", value: "neziswa@kumnandikum.co.za", href: "mailto:neziswa@kumnandikum.co.za" },
-  { icon: Phone, label: "Phone", value: "+27 (0) 00 000 0000", href: "tel:+27000000000" },
-  { icon: MapPin, label: "Location", value: "Stellenbosch, Western Cape, South Africa", href: null },
+  { icon: Mail, label: "Email", value: "neziswa@kumnandi-kum.co.za", href: "mailto:neziswa@kumnandi-kum.co.za" },
+  { icon: Phone, label: "Phone", value: "+27 (0) 61 6352890", href: "tel:+27616352890" },
+  { icon: MapPin, label: "Location", value: "4 DEBEZA STREET|ILITHA PARK|7784, Western Cape, South Africa", href: null },
   { icon: Clock, label: "Response Time", value: "Within 24 hours on business days", href: null },
 ];
 

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, BookOpen, Users, Award, Heart, Lightbulb } from "lucide-react";
+import { ArrowRight, BookOpen, Users, Award, Heart, Lightbulb, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const credentials = [
@@ -27,6 +27,16 @@ const values = [
     desc: "Psychological safety is non-negotiable. We create conditions where teams can have the conversations they've been avoiding.",
   },
 ];
+
+const featuredArticle = {
+  title: "Mom donates sanitary towels to clinic where she gave birth",
+  description:
+    "A Cape Town wellness foundation director celebrates her birthday by donating supplies to new mothers at the same clinic where she once gave birth.",
+  href: "https://scrolla.africa/mom-donates-sanitary-towels-to-clinic-where-she-gave-birth/",
+  publisher: "Scrolla.Africa",
+  publishedAt: "March 12, 2025",
+  image: "https://cdn.scrolla.africa/content/media/2025/03/12185608/250312-Donate.jpeg",
+};
 
 export default function About() {
   return (
@@ -57,21 +67,15 @@ export default function About() {
               >
                 <div className="flex items-center gap-5 mb-6">
                   <div
-                    className="w-[5.5rem] h-[5.5rem] rounded-full p-[2px] shrink-0"
-                    style={{ background: "linear-gradient(135deg, rgba(184,115,51,0.55), rgba(246,197,143,0.45), rgba(138,58,18,0.35))" }}
+                    className="w-24 h-24 rounded-full p-[2px] shrink-0"
+                    style={{ background: "linear-gradient(135deg, #B87333, #F6C58F)" }}
                   >
-                    <div className="w-full h-full rounded-full overflow-hidden bg-[#0F0F10] border border-[#B87333]/35">
-                      <img
-                        src="/profile-image.png"
-                        alt="Neziswa Ntante portrait"
-                        className="w-full h-full object-cover"
-                        style={{
-                          objectPosition: "58% 16%",
-                          transform: "scale(2.4)",
-                          transformOrigin: "58% 16%",
-                        }}
-                      />
-                    </div>
+                    <img
+                      src="/profile-image.png"
+                      alt="Neziswa Ntante portrait"
+                      className="w-full h-full rounded-full object-cover object-top"
+                      loading="lazy"
+                    />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white" style={{ fontFamily: "'Sora', sans-serif" }}>Neziswa Ntante</h2>
@@ -152,16 +156,68 @@ export default function About() {
                 </div>
               </div>
 
-              {/* Full image aligned to the start of the Approach section on desktop */}
-              <div className="xl:col-start-2 xl:row-start-2">
+              {/* Full image aligned to the Story section on desktop */}
+              <div className="xl:col-start-2 xl:row-start-1 xl:self-stretch xl:min-h-0">
                 <img
                   src="/full-image.png"
                   alt="Neziswa Ntante seated at a table"
-                  className="w-full h-auto object-contain object-top"
+                  className="block w-full h-full object-contain object-top"
+                  loading="lazy"
                 />
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Featured Article */}
+      <section className="py-16 px-4 bg-[#0a0a0b] border-y border-white/5">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-10">
+            <div className="text-xs text-[#B87333] font-semibold tracking-widest uppercase mb-3">Community Impact</div>
+            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+              In the <span className="text-copper-gradient">News</span>
+            </h2>
+            <p className="text-[#A7A7A9] max-w-2xl mx-auto">
+              Neziswa's work beyond facilitation reflects the same commitment to dignity and care that guides every Kumnandi Kum engagement.
+            </p>
+          </div>
+
+          <article className="glass-card rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+              <div className="relative min-h-[240px]">
+                <img
+                  src={featuredArticle.image}
+                  alt={featuredArticle.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b]/65 via-transparent to-transparent" />
+              </div>
+
+              <div className="p-6 md:p-8">
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mb-4 border border-[#B87333]/25 bg-[#B87333]/10 text-[#F6C58F]">
+                  {featuredArticle.publisher} • {featuredArticle.publishedAt}
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4 leading-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+                  {featuredArticle.title}
+                </h3>
+                <p className="text-[#A7A7A9] leading-relaxed mb-6">
+                  {featuredArticle.description}
+                </p>
+                <Button
+                  asChild
+                  className="text-[#0F0F10] font-semibold"
+                  style={{ background: "linear-gradient(135deg, #B87333 0%, #F6C58F 50%, #8A3A12 100%)" }}
+                >
+                  <a href={featuredArticle.href} target="_blank" rel="noopener noreferrer">
+                    Read Full Article
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 

@@ -109,11 +109,20 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[#A7A7A9]">
+        <div className="mt-12 pt-6 border-t border-white/5 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-4">
+          <p className="text-xs text-[#A7A7A9] text-center md:text-left md:justify-self-start">
             © {new Date().getFullYear()} Kumnandi Kum. All rights reserved. Facilitated by Neziswa Ntante.
           </p>
-          <p className="text-xs text-[#A7A7A9]">
+          <div className="flex flex-col items-center gap-2 md:justify-self-center">
+            <p className="text-xs text-[#A7A7A9]">A Nanitech</p>
+            <img
+              src="/nanitech-logo.png"
+              alt="Nanitech logo"
+              className="h-auto w-24 md:w-32 object-contain"
+            />
+            <p className="text-xs text-[#A7A7A9]">Dev & Design Project</p>
+          </div>
+          <p className="text-xs text-[#A7A7A9] text-center md:text-right md:justify-self-end">
             Team Pulse AI is a facilitation readiness guide, not a clinical diagnostic tool.
           </p>
         </div>
