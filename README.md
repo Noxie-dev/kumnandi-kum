@@ -25,6 +25,8 @@ Useful routes:
 - `/auth/sign-up`
 - `/account`
 - `/healthz`
+- `/readyz`
+- `/status/dependencies`
 
 ## Environment
 
@@ -36,8 +38,10 @@ Key variables:
 - `VITE_ANALYTICS_ENDPOINT` (optional)
 - `VITE_ANALYTICS_WEBSITE_ID` (optional)
 - `VITE_APP_ID` / `VITE_OAUTH_PORTAL_URL` / `OAUTH_SERVER_URL` for the legacy OAuth flow
-- `BUILT_IN_FORGE_API_URL`
-- `BUILT_IN_FORGE_API_KEY`
+- `OWNER_OPEN_ID` (optional bootstrap owner)
+- `FORGE_ENABLED`
+- `FORGE_API_URL` / `FORGE_API_KEY` when `FORGE_ENABLED=true`
+- `VITE_MAPS_API_KEY` / `VITE_MAPS_PROXY_URL` for browser-side maps
 
 ## Database
 
@@ -59,11 +63,12 @@ The repo includes a Render blueprint in [render.yaml](/Users/director/kumnandi-k
 
 Current deploy flow:
 
-1. Set the required env vars in Render, especially `DATABASE_URL` and `VITE_NEON_AUTH_URL`.
-2. Run `pnpm db:push` against the target Neon database.
-3. Push to `main`.
-4. Render auto-deploys from `main`.
-5. Verify `GET /healthz` returns `200`.
+1. In Render, create a new Blueprint service from this repository so [render.yaml](/Users/director/kumnandi-kum/render.yaml) is imported.
+2. Set the required env vars in Render, especially `DATABASE_URL`, `VITE_NEON_AUTH_URL`, and `FORGE_ENABLED`.
+3. Run `pnpm db:push` against the target Neon database.
+4. Push to `main`.
+5. Render auto-deploys from `main`.
+6. Verify `GET /healthz` returns `200` and `GET /readyz` returns `200` before sending traffic.
 
 ## Verification
 

@@ -8,6 +8,7 @@
  */
 
 import { ENV } from "./env";
+import { ForgeUnavailableError } from "./forge";
 
 // ============================================================================
 // Configuration
@@ -22,9 +23,10 @@ function getMapsConfig(): MapsConfig {
   const baseUrl = ENV.forgeApiUrl;
   const apiKey = ENV.forgeApiKey;
 
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Google Maps proxy credentials missing: set PLATFORM_API_URL and PLATFORM_API_KEY"
+  if (!ENV.forgeEnabled || !baseUrl || !apiKey) {
+    throw new ForgeUnavailableError(
+      "maps",
+      "Map services are not enabled right now."
     );
   }
 
@@ -313,6 +315,5 @@ export type RoadsResult = {
  * Output: Image URL (not JSON) - use directly in <img src={url} />
  * Note: Construct URL manually with getMapsConfig() for auth
  */
-
 
 

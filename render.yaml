@@ -1,13 +1,13 @@
 services:
   - type: web
     name: kumnandi-kum
-    env: docker
+    runtime: docker
     plan: starter
     branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    autoDeploy: true
-    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    healthCheckPath: /readyz
     envVars:
       - key: NODE_ENV
         value: production
@@ -23,15 +23,17 @@ services:
         sync: false
       - key: OWNER_OPEN_ID
         sync: false
-      - key: BUILT_IN_FORGE_API_URL
+      - key: FORGE_ENABLED
+        value: "false"
+      - key: FORGE_API_URL
         sync: false
-      - key: BUILT_IN_FORGE_API_KEY
+      - key: FORGE_API_KEY
         sync: false
       - key: VITE_NEON_AUTH_URL
         sync: false
-      - key: VITE_FRONTEND_FORGE_API_URL
+      - key: VITE_MAPS_API_KEY
         sync: false
-      - key: VITE_FRONTEND_FORGE_API_KEY
+      - key: VITE_MAPS_PROXY_URL
         sync: false
       - key: VITE_ANALYTICS_ENDPOINT
         sync: false

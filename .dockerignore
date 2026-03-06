@@ -1,7 +1,12 @@
 .git
 .gitignore
 node_modules
+**/node_modules
 dist
+**/dist
+build
+**/build
+.pnpm-store
 .env
 .env.*
 !.env.example
@@ -13,3 +18,8 @@ coverage
 .vscode
 .idea
 *.tsbuildinfo
+.codex/
+my-neon-app/
+client/public/__debug__/
+.dev-logs/
+.manus-logs/

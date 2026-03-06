@@ -58,6 +58,22 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
+    const existingUser =
+      (
+        await db
+          .select({
+            role: users.role,
+          })
+          .from(users)
+          .where(eq(users.openId, user.openId))
+          .limit(1)
+      )[0] ?? null;
+    const shouldBootstrapAdmin =
+      !user.role &&
+      !!ENV.authAdminUserId &&
+      user.openId === ENV.authAdminUserId &&
+      !existingUser?.role;
+
     const values: InsertUser = {
       openId: user.openId,
     };
@@ -83,9 +99,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.authAdminUserId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+    } else if (shouldBootstrapAdmin) {
+      values.role = "admin";
+      updateSet.role = "admin";
     }
 
     if (!values.lastSignedIn) {

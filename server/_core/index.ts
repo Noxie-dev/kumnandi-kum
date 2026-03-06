@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getDbHealth } from "../db";
+import { getForgeHealth } from "./forge";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -34,13 +35,39 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  app.get("/healthz", async (_req, res) => {
+
+  app.get("/healthz", (_req, res) => {
+    res.status(200).json({ ok: true });
+  });
+
+  app.get("/readyz", async (_req, res) => {
     const database = await getDbHealth();
-    const ok = database.ok;
+    const forge = await getForgeHealth();
+    const ok = database.ok && (forge.status === "up" || forge.status === "disabled");
 
     res.status(ok ? 200 : 503).json({
       ok,
-      database,
+      dependencies: {
+        database: database.ok ? "up" : "down",
+        forge: forge.status,
+      },
+      details: {
+        database,
+        forge,
+      },
+    });
+  });
+
+  app.get("/status/dependencies", async (_req, res) => {
+    const database = await getDbHealth();
+    const forge = await getForgeHealth();
+
+    res.status(200).json({
+      ok: database.ok && (forge.status === "up" || forge.status === "disabled"),
+      dependencies: {
+        database,
+        forge,
+      },
     });
   });
   // OAuth callback under /api/oauth/callback

@@ -214,14 +214,15 @@ const resolveApiUrl = () => {
     return ENV.llmApiUrl;
   }
 
-  if (ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
+  if (ENV.forgeEnabled && ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
     return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
   }
 
   return "https://api.openai.com/v1/chat/completions";
 };
 
-const resolveApiKey = () => ENV.llmApiKey || ENV.forgeApiKey;
+const resolveApiKey = () =>
+  ENV.llmApiKey || (ENV.forgeEnabled ? ENV.forgeApiKey : "");
 
 const resolveModel = () => {
   if (ENV.llmModel) {
@@ -234,7 +235,7 @@ const resolveModel = () => {
 const assertApiKey = (apiKey: string | undefined) => {
   if (!apiKey) {
     throw new Error(
-      "LLM API key is not configured. Set LLM_API_KEY, OPENAI_API_KEY, or PLATFORM_API_KEY."
+      "LLM API key is not configured. Set LLM_API_KEY, OPENAI_API_KEY, or FORGE_API_KEY."
     );
   }
 };

@@ -25,7 +25,11 @@
  * });
  * ```
  */
-import { ENV } from "./env";
+import {
+  forgeFetch,
+  isForgeUnavailableError,
+  isForgeUpstreamError,
+} from "./forge";
 
 export type TranscribeOptions = {
   audioUrl: string; // URL to the audio file (e.g., S3 URL)
@@ -74,23 +78,7 @@ export async function transcribeAudio(
   options: TranscribeOptions
 ): Promise<TranscriptionResponse | TranscriptionError> {
   try {
-    // Step 1: Validate environment configuration
-    if (!ENV.forgeApiUrl) {
-      return {
-        error: "Voice transcription service is not configured",
-        code: "SERVICE_ERROR",
-        details: "PLATFORM_API_URL is not set"
-      };
-    }
-    if (!ENV.forgeApiKey) {
-      return {
-        error: "Voice transcription service authentication is missing",
-        code: "SERVICE_ERROR",
-        details: "PLATFORM_API_KEY is not set"
-      };
-    }
-
-    // Step 2: Download audio from URL
+    // Step 1: Download audio from URL
     let audioBuffer: Buffer;
     let mimeType: string;
     try {
@@ -123,7 +111,7 @@ export async function transcribeAudio(
       };
     }
 
-    // Step 3: Create FormData for multipart upload to Whisper API
+    // Step 2: Create FormData for multipart upload to Whisper API
     const formData = new FormData();
     
     // Create a Blob from the buffer and append to form
@@ -142,23 +130,14 @@ export async function transcribeAudio(
     );
     formData.append("prompt", prompt);
 
-    // Step 4: Call the transcription service
-    const baseUrl = ENV.forgeApiUrl.endsWith("/")
-      ? ENV.forgeApiUrl
-      : `${ENV.forgeApiUrl}/`;
-    
-    const fullUrl = new URL(
-      "v1/audio/transcriptions",
-      baseUrl
-    ).toString();
-
-    const response = await fetch(fullUrl, {
+    // Step 3: Call the transcription service
+    const response = await forgeFetch("voice-transcription", "v1/audio/transcriptions", {
       method: "POST",
       headers: {
-        authorization: `Bearer ${ENV.forgeApiKey}`,
         "Accept-Encoding": "identity",
       },
       body: formData,
+      timeoutMs: 60_000,
     });
 
     if (!response.ok) {
@@ -170,7 +149,7 @@ export async function transcribeAudio(
       };
     }
 
-    // Step 5: Parse and return the transcription result
+    // Step 4: Parse and return the transcription result
     const whisperResponse = await response.json() as WhisperResponse;
     
     // Validate response structure
@@ -185,6 +164,22 @@ export async function transcribeAudio(
     return whisperResponse; // Return native Whisper API response directly
 
   } catch (error) {
+    if (isForgeUnavailableError(error)) {
+      return {
+        error: "Voice transcription is not enabled in this environment",
+        code: "SERVICE_ERROR",
+        details: error.message,
+      };
+    }
+
+    if (isForgeUpstreamError(error)) {
+      return {
+        error: "Voice transcription service unavailable",
+        code: "SERVICE_ERROR",
+        details: error.message,
+      };
+    }
+
     // Handle unexpected errors
     return {
       error: "Voice transcription failed",

@@ -80,13 +80,8 @@ import { useEffect, useRef } from "react";
 import { usePersistFn } from "@/hooks/usePersistFn";
 import { cn } from "@/lib/utils";
 
-const API_KEY =
-  import.meta.env.VITE_MAPS_API_KEY ||
-  import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const LEGACY_FORGE_BASE_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL || "";
-const DEFAULT_MAPS_PROXY_URL = LEGACY_FORGE_BASE_URL
-  ? `${LEGACY_FORGE_BASE_URL.replace(/\/+$/, "")}/v1/maps/proxy`
-  : "https://maps.googleapis.com";
+const API_KEY = import.meta.env.VITE_MAPS_API_KEY;
+const DEFAULT_MAPS_PROXY_URL = "https://maps.googleapis.com";
 const MAPS_PROXY_URL = (
   import.meta.env.VITE_MAPS_PROXY_URL || DEFAULT_MAPS_PROXY_URL
 ).replace(/\/+$/, "");
@@ -95,7 +90,7 @@ function loadMapScript() {
   return new Promise(resolve => {
     if (!API_KEY) {
       console.error(
-        "Maps API key is missing. Set VITE_MAPS_API_KEY (or legacy VITE_FRONTEND_FORGE_API_KEY)."
+        "Maps API key is missing. Set VITE_MAPS_API_KEY."
       );
       resolve(null);
       return;

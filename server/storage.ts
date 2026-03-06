@@ -1,48 +1,18 @@
 // Preconfigured storage helpers for self-hosted deployments.
 // Uses a storage proxy endpoint (Authorization: Bearer <token>).
 
-import { ENV } from './_core/env';
+import { forgeFetch, forgeJsonRequest } from "./_core/forge";
 
-type StorageConfig = { baseUrl: string; apiKey: string };
-
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set PLATFORM_API_URL and PLATFORM_API_KEY"
-    );
-  }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
+function buildUploadPath(relKey: string): string {
+  const url = new URL("http://forge.local/v1/storage/upload");
   url.searchParams.set("path", normalizeKey(relKey));
-  return url;
+  return `${url.pathname}${url.search}`;
 }
 
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
+function buildDownloadPath(relKey: string): string {
+  const url = new URL("http://forge.local/v1/storage/downloadUrl");
+  url.searchParams.set("path", normalizeKey(relKey));
+  return `${url.pathname}${url.search}`;
 }
 
 function normalizeKey(relKey: string): string {
@@ -63,23 +33,17 @@ function toFormData(
   return form;
 }
 
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
   const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
+  const response = await forgeFetch("storage", buildUploadPath(key), {
     method: "POST",
-    headers: buildAuthHeaders(apiKey),
     body: formData,
+    timeoutMs: 20_000,
   });
 
   if (!response.ok) {
@@ -88,15 +52,26 @@ export async function storagePut(
       `Storage upload failed (${response.status} ${response.statusText}): ${message}`
     );
   }
-  const url = (await response.json()).url;
+
+  const { url } = (await response.json()) as { url: string };
   return { key, url };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+export async function storageGet(
+  relKey: string
+): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
+  const { url } = await forgeJsonRequest<{ url: string }>(
+    "storage",
+    buildDownloadPath(key),
+    {
+      method: "GET",
+      timeoutMs: 10_000,
+    }
+  );
+
   return {
     key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
+    url,
   };
 }

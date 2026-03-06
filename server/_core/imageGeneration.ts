@@ -16,7 +16,7 @@
  *   });
  */
 import { storagePut } from "server/storage";
-import { ENV } from "./env";
+import { forgeJsonRequest } from "./forge";
 
 export type GenerateImageOptions = {
   prompt: string;
@@ -34,29 +34,17 @@ export type GenerateImageResponse = {
 export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResponse> {
- if (!ENV.forgeApiUrl) {
-    throw new Error("PLATFORM_API_URL is not configured");
-  }
-  if (!ENV.forgeApiKey) {
-    throw new Error("PLATFORM_API_KEY is not configured");
-  }
-
-  // Build the full URL by appending the service path to the base URL
-  const baseUrl = ENV.forgeApiUrl.endsWith("/")
-    ? ENV.forgeApiUrl
-    : `${ENV.forgeApiUrl}/`;
-  const fullUrl = new URL(
-    "images.v1.ImageService/GenerateImage",
-    baseUrl
-  ).toString();
-
-  const response = await fetch(fullUrl, {
+  const result = await forgeJsonRequest<{
+    image: {
+      b64Json: string;
+      mimeType: string;
+    };
+  }>("image-generation", "images.v1.ImageService/GenerateImage", {
     method: "POST",
     headers: {
       accept: "application/json",
       "content-type": "application/json",
       "connect-protocol-version": "1",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
     },
     body: JSON.stringify({
       prompt: options.prompt,
@@ -64,19 +52,6 @@ export async function generateImage(
     }),
   });
 
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `Image generation request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`
-    );
-  }
-
-  const result = (await response.json()) as {
-    image: {
-      b64Json: string;
-      mimeType: string;
-    };
-  };
   const base64Data = result.image.b64Json;
   const buffer = Buffer.from(base64Data, "base64");
 

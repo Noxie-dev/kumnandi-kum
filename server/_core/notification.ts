@@ -1,5 +1,9 @@
 import { TRPCError } from "@trpc/server";
-import { ENV } from "./env";
+import {
+  forgeFetch,
+  isForgeUnavailableError,
+  isForgeUpstreamError,
+} from "./forge";
 
 export type NotificationPayload = {
   title: string;
@@ -68,33 +72,20 @@ export async function notifyOwner(
 ): Promise<boolean> {
   const { title, content } = validatePayload(payload);
 
-  if (!ENV.forgeApiUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service URL is not configured.",
-    });
-  }
-
-  if (!ENV.forgeApiKey) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service API key is not configured.",
-    });
-  }
-
-  const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
-
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${ENV.forgeApiKey}`,
-        "content-type": "application/json",
-        "connect-protocol-version": "1",
-      },
-      body: JSON.stringify({ title, content }),
-    });
+    const response = await forgeFetch(
+      "notifications",
+      "webdevtoken.v1.WebDevService/SendNotification",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "connect-protocol-version": "1",
+        },
+        body: JSON.stringify({ title, content }),
+      }
+    );
 
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
@@ -108,6 +99,16 @@ export async function notifyOwner(
 
     return true;
   } catch (error) {
+    if (isForgeUnavailableError(error)) {
+      console.warn("[Notification] Forge notifications are disabled.");
+      return false;
+    }
+
+    if (isForgeUpstreamError(error)) {
+      console.warn("[Notification] Upstream notification error:", error.message);
+      return false;
+    }
+
     console.warn("[Notification] Error calling notification service:", error);
     return false;
   }
