@@ -49,4 +49,4 @@
 - [x] Update project README with local/dev/deploy instructions
 - [x] Push schema to the configured Neon database
 - [x] Verify `pnpm check`, `pnpm test`, and `pnpm build`
-- [ ] Commit and push all tracked and untracked changes to `main`
+- [x] Commit and push all tracked and untracked changes to `main`
