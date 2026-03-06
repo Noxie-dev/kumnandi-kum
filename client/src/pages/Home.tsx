@@ -710,10 +710,15 @@ export default function Home() {
                 <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10"
                   style={{ background: "radial-gradient(circle, #F6C58F, transparent)", transform: "translate(30%, -30%)" }} />
                 <div
-                  className="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold text-[#0F0F10] mx-auto mb-4"
+                  className="w-24 h-24 rounded-full mx-auto mb-4 p-[2px]"
                   style={{ background: "linear-gradient(135deg, #B87333, #F6C58F)" }}
                 >
-                  N
+                  <img
+                    src="/profile-image.png"
+                    alt="Neziswa Ntante portrait"
+                    className="w-full h-full rounded-full object-cover object-top"
+                    loading="lazy"
+                  />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Sora', sans-serif" }}>Neziswa Ntante</h3>
                 <p className="text-sm text-[#F6C58F] mb-4">Founder & Lead Facilitator</p>

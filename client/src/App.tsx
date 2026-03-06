@@ -1,47 +1,71 @@
-import { Toaster } from "@/components/ui/sonner";
+import { Suspense, lazy } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import Services from "./pages/Services";
-import ServiceDetail from "./pages/ServiceDetail";
-import About from "./pages/About";
-import WhoWeHelp from "./pages/WhoWeHelp";
-import Pricing from "./pages/Pricing";
-import Testimonials from "./pages/Testimonials";
-import FAQ from "./pages/FAQ";
-import Contact from "./pages/Contact";
-import AIDT from "./pages/AIDT";
-import AIDTResults from "./pages/AIDTResults";
+
+const Account = lazy(() => import("./pages/Account"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Home = lazy(() => import("./pages/Home"));
+const Services = lazy(() => import("./pages/Services"));
+const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
+const About = lazy(() => import("./pages/About"));
+const WhoWeHelp = lazy(() => import("./pages/WhoWeHelp"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Testimonials = lazy(() => import("./pages/Testimonials"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Contact = lazy(() => import("./pages/Contact"));
+const AIDT = lazy(() => import("./pages/AIDT"));
+const AIDTResults = lazy(() => import("./pages/AIDTResults"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function Router() {
+  const [location] = useLocation();
+  const isAuthRoute =
+    location === "/auth" ||
+    location.startsWith("/auth/") ||
+    location === "/account" ||
+    location.startsWith("/account/");
+
   return (
     <div className="min-h-screen bg-[#0F0F10] flex flex-col">
-      <Navigation />
+      {!isAuthRoute && <Navigation />}
       <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/services" component={Services} />
-          <Route path="/services/half-day" component={ServiceDetail} />
-          <Route path="/services/weekend-camps" component={ServiceDetail} />
-          <Route path="/services/workshops" component={ServiceDetail} />
-          <Route path="/about" component={About} />
-          <Route path="/who-we-help" component={WhoWeHelp} />
-          <Route path="/pricing" component={Pricing} />
-          <Route path="/testimonials" component={Testimonials} />
-          <Route path="/faq" component={FAQ} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/aidt" component={AIDT} />
-          <Route path="/aidt/results" component={AIDTResults} />
-          <Route path="/404" component={NotFound} />
-          <Route component={NotFound} />
-        </Switch>
+        <Suspense
+          fallback={
+            <div className="min-h-[50vh] flex items-center justify-center text-sm text-[#A7A7A9]">
+              Loading...
+            </div>
+          }
+        >
+          <Switch>
+            <Route path="/auth">{() => <Auth />}</Route>
+            <Route path="/auth/:path">{params => <Auth path={params.path} />}</Route>
+            <Route path="/account">{() => <Account />}</Route>
+            <Route path="/account/:path">
+              {params => <Account path={params.path} />}
+            </Route>
+            <Route path="/">{() => <Home />}</Route>
+            <Route path="/services">{() => <Services />}</Route>
+            <Route path="/services/half-day">{() => <ServiceDetail />}</Route>
+            <Route path="/services/weekend-camps">{() => <ServiceDetail />}</Route>
+            <Route path="/services/workshops">{() => <ServiceDetail />}</Route>
+            <Route path="/about">{() => <About />}</Route>
+            <Route path="/who-we-help">{() => <WhoWeHelp />}</Route>
+            <Route path="/pricing">{() => <Pricing />}</Route>
+            <Route path="/testimonials">{() => <Testimonials />}</Route>
+            <Route path="/faq">{() => <FAQ />}</Route>
+            <Route path="/contact">{() => <Contact />}</Route>
+            <Route path="/aidt">{() => <AIDT />}</Route>
+            <Route path="/aidt/results">{() => <AIDTResults />}</Route>
+            <Route path="/404">{() => <NotFound />}</Route>
+            <Route>{() => <NotFound />}</Route>
+          </Switch>
+        </Suspense>
       </main>
-      <Footer />
+      {!isAuthRoute && <Footer />}
     </div>
   );
 }
@@ -51,7 +75,6 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

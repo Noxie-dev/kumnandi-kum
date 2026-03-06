@@ -1,3 +1,4 @@
+import { SignedIn, SignedOut, UserButton } from "@neondatabase/auth-ui";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -134,6 +135,21 @@ export default function Navigation() {
 
           {/* CTA + Mobile Toggle */}
           <div className="flex items-center gap-3">
+            <SignedOut>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden border-white/15 bg-white/5 text-white hover:bg-white/10 md:inline-flex"
+              >
+                <Link href="/auth/sign-in">Sign In</Link>
+              </Button>
+            </SignedOut>
+            <SignedIn>
+              <div className="hidden md:block">
+                <UserButton />
+              </div>
+            </SignedIn>
             <Link href="/contact" className="hidden md:block">
               <Button
                 size="sm"
@@ -211,6 +227,24 @@ export default function Navigation() {
             )
           )}
           <div className="pt-3 border-t border-white/5">
+            <SignedOut>
+              <Button
+                asChild
+                variant="outline"
+                className="mb-3 w-full border-white/15 bg-white/5 text-white hover:bg-white/10"
+              >
+                <Link href="/auth/sign-in">Sign In</Link>
+              </Button>
+            </SignedOut>
+            <SignedIn>
+              <Button
+                asChild
+                variant="outline"
+                className="mb-3 w-full border-white/15 bg-white/5 text-white hover:bg-white/10"
+              >
+                <Link href="/account">Account</Link>
+              </Button>
+            </SignedIn>
             <Link href="/contact">
               <Button
                 className="w-full font-semibold text-[#0F0F10]"

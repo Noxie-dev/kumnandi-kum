@@ -7,7 +7,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production
@@ -26,6 +26,8 @@ services:
       - key: BUILT_IN_FORGE_API_URL
         sync: false
       - key: BUILT_IN_FORGE_API_KEY
+        sync: false
+      - key: VITE_NEON_AUTH_URL
         sync: false
       - key: VITE_FRONTEND_FORGE_API_URL
         sync: false

@@ -40,3 +40,13 @@
 - [x] Scoring engine unit tests (17 tests)
 - [x] Auth logout integration test (1 test)
 - [x] All 18 tests passing
+
+## Production Deploy Stage
+- [x] Switch runtime schema and DB client to Neon Postgres
+- [x] Add a real production health endpoint and point Render at it
+- [x] Make analytics optional without broken placeholder requests
+- [x] Add Neon Auth deployment env wiring
+- [x] Update project README with local/dev/deploy instructions
+- [x] Push schema to the configured Neon database
+- [x] Verify `pnpm check`, `pnpm test`, and `pnpm build`
+- [ ] Commit and push all tracked and untracked changes to `main`

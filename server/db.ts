@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-serverless";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -7,15 +7,43 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db && ENV.databaseUrl) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db = drizzle(ENV.databaseUrl);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
   }
   return _db;
+}
+
+export async function getDbHealth() {
+  if (!ENV.databaseUrl) {
+    return {
+      ok: false,
+      error: "DATABASE_URL is not configured",
+    } as const;
+  }
+
+  try {
+    const db = await getDb();
+    if (!db) {
+      return {
+        ok: false,
+        error: "Database client unavailable",
+      } as const;
+    }
+
+    await db.execute(sql`select 1`);
+
+    return { ok: true } as const;
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    } as const;
+  }
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -55,7 +83,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (user.openId === ENV.authAdminUserId) {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
@@ -68,9 +96,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    await db
+      .insert(users)
+      .values(values)
+      .onConflictDoUpdate({
+        target: users.openId,
+        set: updateSet,
+      });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;

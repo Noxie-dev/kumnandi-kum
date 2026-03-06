@@ -24,16 +24,16 @@ export type SessionPayload = {
   name: string;
 };
 
-const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
-const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
-const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
+const EXCHANGE_TOKEN_PATH = ENV.authExchangePath;
+const GET_USER_INFO_PATH = ENV.authUserInfoPath;
+const GET_USER_INFO_WITH_JWT_PATH = ENV.authUserInfoWithJwtPath;
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
+    console.log("[Auth] OAuth client initialized with baseURL:", ENV.oAuthServerUrl);
     if (!ENV.oAuthServerUrl) {
       console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+        "[Auth] AUTH_SERVER_URL is not configured. Set AUTH_SERVER_URL (or legacy OAUTH_SERVER_URL)."
       );
     }
   }
@@ -48,7 +48,7 @@ class OAuthService {
     state: string
   ): Promise<ExchangeTokenResponse> {
     const payload: ExchangeTokenRequest = {
-      clientId: ENV.appId,
+      clientId: ENV.authClientId,
       grantType: "authorization_code",
       code,
       redirectUri: this.decodeState(state),
@@ -84,11 +84,36 @@ const createOAuthHttpClient = (): AxiosInstance =>
 
 class SDKServer {
   private readonly client: AxiosInstance;
-  private readonly oauthService: OAuthService;
+  private oauthService: OAuthService | null = null;
 
   constructor(client: AxiosInstance = createOAuthHttpClient()) {
     this.client = client;
-    this.oauthService = new OAuthService(this.client);
+  }
+
+  private assertOAuthEnabled() {
+    if (ENV.authMode !== "oauth") {
+      throw new Error(
+        `OAuth is disabled (AUTH_MODE=${ENV.authMode}). Set AUTH_MODE=oauth to enable login callbacks.`
+      );
+    }
+
+    if (!ENV.authClientId) {
+      throw new Error("AUTH_CLIENT_ID is not configured.");
+    }
+
+    if (!ENV.authServerUrl) {
+      throw new Error("AUTH_SERVER_URL is not configured.");
+    }
+  }
+
+  private getOAuthService(): OAuthService {
+    this.assertOAuthEnabled();
+
+    if (!this.oauthService) {
+      this.oauthService = new OAuthService(this.client);
+    }
+
+    return this.oauthService;
   }
 
   private deriveLoginMethod(
@@ -122,7 +147,7 @@ class SDKServer {
     code: string,
     state: string
   ): Promise<ExchangeTokenResponse> {
-    return this.oauthService.getTokenByCode(code, state);
+    return this.getOAuthService().getTokenByCode(code, state);
   }
 
   /**
@@ -131,7 +156,7 @@ class SDKServer {
    * const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
    */
   async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
-    const data = await this.oauthService.getUserInfoByToken({
+    const data = await this.getOAuthService().getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
     const loginMethod = this.deriveLoginMethod(
@@ -160,7 +185,7 @@ class SDKServer {
   }
 
   /**
-   * Create a session token for a Manus user openId
+   * Create a signed session token for a user openId
    * @example
    * const sessionToken = await sdk.createSessionToken(userInfo.openId);
    */
@@ -171,7 +196,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId: ENV.appId || "self-hosted-app",
         name: options.name || "",
       },
       options
@@ -235,6 +260,7 @@ class SDKServer {
   async getUserInfoWithJwt(
     jwtToken: string
   ): Promise<GetUserInfoWithJwtResponse> {
+    this.assertOAuthEnabled();
     const payload: GetUserInfoWithJwtRequest = {
       jwtToken,
       projectId: ENV.appId,
@@ -256,8 +282,7 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
+  private async authenticateWithOAuthSession(req: Request): Promise<User> {
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -298,6 +323,62 @@ class SDKServer {
     });
 
     return user;
+  }
+
+  private buildLocalUserFallback(): User {
+    const now = new Date();
+
+    return {
+      id: 0,
+      openId: ENV.localAuthUserId,
+      name: ENV.localAuthUserName || "Local User",
+      email: ENV.localAuthUserEmail || null,
+      loginMethod: "local",
+      role: ENV.localAuthUserRole,
+      createdAt: now,
+      updatedAt: now,
+      lastSignedIn: now,
+    };
+  }
+
+  private async authenticateWithLocalUser(): Promise<User> {
+    const openId = ENV.localAuthUserId;
+    const signedInAt = new Date();
+
+    try {
+      await db.upsertUser({
+        openId,
+        name: ENV.localAuthUserName || null,
+        email: ENV.localAuthUserEmail || null,
+        loginMethod: "local",
+        role: ENV.localAuthUserRole,
+        lastSignedIn: signedInAt,
+      });
+
+      const dbUser = await db.getUserByOpenId(openId);
+      if (dbUser) {
+        return dbUser;
+      }
+    } catch (error) {
+      console.warn(
+        "[Auth] Local auth user could not be persisted to DB, continuing with in-memory fallback:",
+        error
+      );
+    }
+
+    return this.buildLocalUserFallback();
+  }
+
+  async authenticateRequest(req: Request): Promise<User> {
+    if (ENV.authMode === "local") {
+      return this.authenticateWithLocalUser();
+    }
+
+    if (ENV.authMode === "none") {
+      throw ForbiddenError("Authentication is disabled");
+    }
+
+    return this.authenticateWithOAuthSession(req);
   }
 }
 
