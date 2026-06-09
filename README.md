@@ -17,6 +17,14 @@ pnpm install
 pnpm dev
 ```
 
+Dev container:
+
+```bash
+devcontainer up --workspace-folder .
+```
+
+The dev container uses Node 22, activates the repo's pinned pnpm version through Corepack, installs dependencies on create, and forwards port `3000`.
+
 Useful routes:
 
 - `/`
