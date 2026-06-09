@@ -34,6 +34,8 @@ function ParticleHero() {
     type Particle = {
       x: number; y: number; vx: number; vy: number;
       r: number; alpha: number; color: string; phase: number;
+      shootingStar?: boolean;
+      trail?: Array<{ x: number; y: number }>;
     };
 
     const colors = ["#B87333", "#F6C58F", "#8A3A12", "#D4956A", "#ffffff"];
@@ -47,6 +49,19 @@ function ParticleHero() {
       color: colors[Math.floor(Math.random() * colors.length)],
       phase: Math.random() * Math.PI * 2,
     }));
+    const starSpeed = window.innerWidth < 768 ? 0.95 : 1.35;
+    particles[0] = {
+      x: W() * 0.24,
+      y: H() * 0.32,
+      vx: starSpeed,
+      vy: starSpeed * 0.64,
+      r: window.innerWidth < 768 ? 4.2 : 5.6,
+      alpha: 0.95,
+      color: "#FFE6A8",
+      phase: Math.random() * Math.PI * 2,
+      shootingStar: true,
+      trail: [],
+    };
 
     const mouse = {
       x: W() / 2,
@@ -197,6 +212,98 @@ function ParticleHero() {
       ctx.globalAlpha = 1;
     };
 
+    const normalizeShootingStarVelocity = (p: Particle, speed: number) => {
+      const magnitude = Math.hypot(p.vx, p.vy) || 1;
+      p.vx = (p.vx / magnitude) * speed;
+      p.vy = (p.vy / magnitude) * speed;
+    };
+
+    const updateShootingStar = (p: Particle) => {
+      const width = W();
+      const height = H();
+      const speed = window.innerWidth < 768 ? 0.95 : 1.35;
+
+      p.trail?.push({ x: p.x, y: p.y });
+      if (p.trail && p.trail.length > 28) {
+        p.trail.shift();
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x <= p.r) {
+        p.x = p.r;
+        p.vx = Math.abs(p.vx);
+        p.vy += Math.sin((p.y / height) * Math.PI * 2) * 0.22;
+      } else if (p.x >= width - p.r) {
+        p.x = width - p.r;
+        p.vx = -Math.abs(p.vx);
+        p.vy += Math.cos((p.y / height) * Math.PI * 2) * 0.22;
+      }
+
+      if (p.y <= p.r) {
+        p.y = p.r;
+        p.vy = Math.abs(p.vy);
+        p.vx += Math.cos((p.x / width) * Math.PI * 2) * 0.22;
+      } else if (p.y >= height - p.r) {
+        p.y = height - p.r;
+        p.vy = -Math.abs(p.vy);
+        p.vx += Math.sin((p.x / width) * Math.PI * 2) * 0.22;
+      }
+
+      normalizeShootingStarVelocity(p, speed);
+    };
+
+    const drawShootingStar = (p: Particle) => {
+      const trail = p.trail ?? [];
+      for (let i = 1; i < trail.length; i++) {
+        const prev = trail[i - 1];
+        const point = trail[i];
+        const age = i / trail.length;
+        const width = p.r * (0.4 + age * 1.4);
+        const alpha = p.alpha * age * age * 0.44;
+
+        const grad = ctx.createLinearGradient(prev.x, prev.y, point.x, point.y);
+        grad.addColorStop(0, `rgba(255,180,88,0)`);
+        grad.addColorStop(0.45, `rgba(246,197,143,${alpha * 0.7})`);
+        grad.addColorStop(1, `rgba(255,238,184,${alpha})`);
+
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(point.x, point.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.shadowColor = "rgba(255,205,130,0.7)";
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+      ctx.lineCap = "butt";
+
+      const outerGlow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 7.5);
+      outerGlow.addColorStop(0, "rgba(255,246,214,0.8)");
+      outerGlow.addColorStop(0.32, "rgba(246,197,143,0.42)");
+      outerGlow.addColorStop(1, "rgba(184,115,51,0)");
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 7.5, 0, Math.PI * 2);
+      ctx.fillStyle = outerGlow;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 1.55, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,238,184,0.92)";
+      ctx.shadowColor = "rgba(255,226,166,0.95)";
+      ctx.shadowBlur = 16;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 0.72, 0, Math.PI * 2);
+      ctx.fillStyle = "#fffaf0";
+      ctx.fill();
+    };
+
     const draw = () => {
       ctx.clearRect(0, 0, W(), H());
       t += 0.005;
@@ -211,12 +318,16 @@ function ParticleHero() {
       drawGrid();
 
       particles.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = W();
-        if (p.x > W()) p.x = 0;
-        if (p.y < 0) p.y = H();
-        if (p.y > H()) p.y = 0;
+        if (p.shootingStar) {
+          updateShootingStar(p);
+        } else {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = W();
+          if (p.x > W()) p.x = 0;
+          if (p.y < 0) p.y = H();
+          if (p.y > H()) p.y = 0;
+        }
 
         // Draw connections
         particles.slice(i + 1).forEach((q) => {
@@ -232,6 +343,11 @@ function ParticleHero() {
             ctx.stroke();
           }
         });
+
+        if (p.shootingStar) {
+          drawShootingStar(p);
+          return;
+        }
 
         // Draw particle
         const pulse = Math.sin(t * 2 + p.phase) * 0.3 + 0.7;
