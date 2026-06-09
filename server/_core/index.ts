@@ -44,8 +44,9 @@ async function startServer() {
     const database = await getDbHealth();
     const forge = await getForgeHealth();
     const ok = database.ok && (forge.status === "up" || forge.status === "disabled");
+    const strictReadyz = process.env.STRICT_READYZ === "true";
 
-    res.status(ok ? 200 : 503).json({
+    res.status(ok || !strictReadyz ? 200 : 503).json({
       ok,
       dependencies: {
         database: database.ok ? "up" : "down",
