@@ -304,6 +304,52 @@ function ParticleHero() {
       ctx.fill();
     };
 
+    const drawParticleConnection = (p: Particle, q: Particle, dist: number) => {
+      const maxDistance = 120;
+      const proximity = clamp(1 - dist / maxDistance, 0, 1);
+      const isStarConnection = Boolean(p.shootingStar || q.shootingStar);
+
+      if (!isStarConnection) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.strokeStyle = `rgba(184,115,51,${proximity * 0.22})`;
+        ctx.lineWidth = 0.65;
+        ctx.stroke();
+        return;
+      }
+
+      const shimmer = 0.78 + Math.sin(t * 8 + proximity * Math.PI) * 0.22;
+      const glowStrength = proximity * proximity * shimmer;
+      const grad = ctx.createLinearGradient(p.x, p.y, q.x, q.y);
+      grad.addColorStop(0, `rgba(255,248,219,${0.06 + glowStrength * 0.36})`);
+      grad.addColorStop(0.45, `rgba(255,215,150,${0.08 + glowStrength * 0.58})`);
+      grad.addColorStop(1, `rgba(246,197,143,${0.05 + glowStrength * 0.32})`);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(q.x, q.y);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 0.85 + proximity * 1.65;
+      ctx.lineCap = "round";
+      ctx.shadowColor = "rgba(255,216,150,0.9)";
+      ctx.shadowBlur = 8 + glowStrength * 22;
+      ctx.stroke();
+
+      if (proximity > 0.18) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.strokeStyle = `rgba(255,250,230,${glowStrength * 0.34})`;
+        ctx.lineWidth = 0.35 + proximity * 0.65;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
     const draw = () => {
       ctx.clearRect(0, 0, W(), H());
       t += 0.005;
@@ -335,12 +381,7 @@ function ParticleHero() {
           const dy = p.y - q.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(184,115,51,${(1 - dist / 120) * 0.22})`;
-            ctx.lineWidth = 0.65;
-            ctx.stroke();
+            drawParticleConnection(p, q, dist);
           }
         });
 
