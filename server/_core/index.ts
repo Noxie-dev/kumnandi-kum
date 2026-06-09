@@ -91,13 +91,14 @@ async function startServer() {
   const portFromEnv = process.env.PORT;
   const preferredPort = parseInt(portFromEnv || "3000");
   const port = portFromEnv ? preferredPort : await findAvailablePort(preferredPort);
+  const host = process.env.HOST || "0.0.0.0";
 
   if (!portFromEnv && port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  server.listen(port, host, () => {
+    console.log(`Server running on http://${host}:${port}/`);
   });
 }
 
